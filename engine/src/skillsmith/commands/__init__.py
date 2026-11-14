@@ -1,19 +1,19 @@
 """Skillsmith modular command registry."""
 from __future__ import annotations
 
-from .init import init
-from .run import run
 from .approve import approve
-from .status import status
-from .verify_cmd import verify_cmd
 from .audit_cmd import audit_cmd
 from .compile_cmd import compile_cmd
-from .export import export
-from .router import router
-from .eval_run import eval_run
-from .eval_quality import eval_quality
-from .mcp_cmd import mcp_cmd
 from .config_cmd import config_cmd
+from .eval_quality import eval_quality
+from .eval_run import eval_run
+from .export import export
+from .init import init
+from .mcp_cmd import mcp_cmd
+from .router import router
+from .run import run
+from .status import status
+from .verify_cmd import verify_cmd
 
 ALL = [
     init,

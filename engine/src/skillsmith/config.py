@@ -5,8 +5,9 @@ Missing files are ignored; unreadable or invalid files or values are skipped wit
 from __future__ import annotations
 
 import os
-import tomllib
 from pathlib import Path
+
+import tomllib
 from pydantic import BaseModel, Field, ValidationError
 
 PROVIDERS = ("fake", "anthropic", "openai", "langchain")

@@ -63,9 +63,9 @@ def merge_units(primary: ActionUnit, others: list[ActionUnit], title: str | None
     seen_e, evidence = set(), []
     for g in group:
         for e in g.evidence:
-            k = (e.claim.lower(), e.cite.pdf_page)
-            if k not in seen_e:
-                seen_e.add(k)
+            ek = (e.claim.lower(), e.cite.pdf_page)
+            if ek not in seen_e:
+                seen_e.add(ek)
                 evidence.append(e)
     u.evidence = evidence
     u.time_sensitive = any(g.time_sensitive for g in group)

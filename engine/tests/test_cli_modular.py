@@ -1,7 +1,7 @@
 """Tests for modular Click commands and config CLI integration."""
-import pytest
 from click.testing import CliRunner
-from skillsmith.cli import cli, main
+
+from skillsmith.cli import cli
 
 
 def test_cli_help_lists_all_commands():

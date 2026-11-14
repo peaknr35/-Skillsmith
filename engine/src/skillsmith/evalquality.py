@@ -120,12 +120,12 @@ def summarize(rows: list[dict]) -> dict:
 
     def block(sub):
         w = sum(r["winner"] == "treatment" for r in sub)
-        l = sum(r["winner"] == "baseline" for r in sub)
+        lost = sum(r["winner"] == "baseline" for r in sub)
         t = sum(r["winner"] == "tie" for r in sub)
         means = {}
         for cond in ("treatment", "baseline"):
             means[cond] = {k: (sum(r[f"scores_{cond}"][k] for r in sub) / len(sub)) if sub else None for k in CRITERIA}
-        return {"n": len(sub), "treatment_wins": w, "baseline_wins": l, "ties": t, "sign_test_p": sign_test_p(w, l),
+        return {"n": len(sub), "treatment_wins": w, "baseline_wins": lost, "ties": t, "sign_test_p": sign_test_p(w, lost),
                 "mean_scores": means}
 
     return {"all": block(ok), "neutral_only": block([r for r in ok if r["neutral"]]),
@@ -135,6 +135,10 @@ def summarize(rows: list[dict]) -> dict:
             "treatment_answers_with_visible_markers": sum(r["treatment_markers_visible"] for r in rows),
             "baseline_answers_with_visible_markers": sum(r["baseline_markers_visible"] for r in rows),
             "n_rows": len(rows)}
+
+
+def _f2(v) -> str:
+    return "n/a" if v is None else f"{v:.2f}"
 
 
 def render_report(skill: str, gen_model: str, judge_model: str, repeats: int, with_playbook: bool, s: dict) -> str:
@@ -156,8 +160,7 @@ def render_report(skill: str, gen_model: str, judge_model: str, repeats: int, wi
          "## Mean scores (1-5)", "", "| criterion | without skill | with skill | without (neutral only) | with (neutral only) |", "|---|---|---|---|---|"]
     for k in CRITERIA:
         a, n = s["all"]["mean_scores"], s["neutral_only"]["mean_scores"]
-        f2 = lambda v: "n/a" if v is None else f"{v:.2f}"
-        L.append(f"| {k} | {f2(a['baseline'][k])} | {f2(a['treatment'][k])} | {f2(n['baseline'][k])} | {f2(n['treatment'][k])} |")
+        L.append(f"| {k} | {_f2(a['baseline'][k])} | {_f2(a['treatment'][k])} | {_f2(n['baseline'][k])} | {_f2(n['treatment'][k])} |")
     L += ["", "## Confounds to read next to the numbers", "",
           f"- Mean answer length: {s['mean_chars']['baseline']:.0f} characters without the skill, {s['mean_chars']['treatment']:.0f} with it.",
           f"- Answers showing unit ids or page cites (visible markers): {s['treatment_answers_with_visible_markers']} of {s['n_rows']} with the skill, "

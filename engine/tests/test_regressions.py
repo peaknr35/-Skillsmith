@@ -1,4 +1,5 @@
 """Regression tests for the independent QA findings (B2-B7, V1-V6) and amendment A2."""
+import importlib
 import json
 from pathlib import Path
 
@@ -9,14 +10,14 @@ from pydantic import ValidationError
 from skillsmith import cli, gates, runner, verify, workspace
 from skillsmith import compile as comp
 from skillsmith.ingest import ingest_pdf, segment
-import importlib
-segmod = importlib.import_module('skillsmith.ingest.segment')
 from skillsmith.ingest.segment import Section, split_long
 from skillsmith.llm import FakeProvider
 from skillsmith.schema import SkillProposal, SkillSpec
 
 from .fakes import NAME, fake, responder
 from .test_integration import run_all
+
+segmod = importlib.import_module("skillsmith.ingest.segment")
 
 
 def _pdf(path, pages, toc=None, footer=True, offset=0):
@@ -70,7 +71,7 @@ def test_unsorted_duplicate_outline_gives_non_overlapping_sections(tmp_path):
     secs = segment(ingest_pdf(p))
     spans = [(s.start_pdf, s.end_pdf) for s in secs]
     assert spans == sorted(spans)
-    assert all(a_end < b_start for (_, a_end), (b_start, _) in zip(spans, spans[1:]))
+    assert all(a_end < b_start for (_, a_end), (b_start, _) in zip(spans, spans[1:], strict=False))
 
 
 # ---- B5: one block larger than the cap is split
@@ -402,7 +403,8 @@ def test_dotenv_loads_without_overriding_and_never_prints(tmp_path, monkeypatch,
     assert os.environ["SKILLSMITH_T1"] == "abc123" and os.environ["SKILLSMITH_T3"] == "zzz"
     assert os.environ["SKILLSMITH_T2"] == "from-shell"  # shell wins
     assert "abc123" not in capsys.readouterr().out
-    monkeypatch.delenv("SKILLSMITH_T1"); monkeypatch.delenv("SKILLSMITH_T3")
+    monkeypatch.delenv("SKILLSMITH_T1")
+    monkeypatch.delenv("SKILLSMITH_T3")
 
 
 # ---- found on the first live-model run (stage 02, ICM paper)
@@ -592,6 +594,7 @@ def test_expand_helpers():
 def test_anthropic_provider_streams_and_flags_truncation(monkeypatch):
     import sys
     import types
+
     from skillsmith.llm.anthropic_provider import AnthropicProvider, TruncatedOutput
 
     class Block:
@@ -639,7 +642,7 @@ def test_anthropic_provider_streams_and_flags_truncation(monkeypatch):
     with pytest.raises(TruncatedOutput, match="cut off"):
         p.complete("s", "u")
     # through the runner: a truncated reply is a clean StageError, not a JSON parse error
-    from skillsmith.runner import call_json, StageError
+    from skillsmith.runner import StageError, call_json
     with pytest.raises(StageError, match="provider call failed: TruncatedOutput"):
         call_json(p, "s", "u", lambda d: d, __import__("pathlib").Path("/nonexistent-skillsmith-test"), "t")
 
@@ -669,7 +672,7 @@ def test_reply_size_is_independent_of_unit_count(ws):
 
 
 def test_merge_ids_in_conflicts_are_mapped_back_to_real_unit_ids(ws, monkeypatch):
-    prov0 = _to_04(ws)
+    _to_04(ws)
     monkeypatch.setattr(runner, "BATCH_TOKENS", 300)
 
     def with_conflict(s, u):
@@ -770,6 +773,7 @@ def test_old_runs_without_source_metadata_fall_back_to_the_pdf(ws):
 
 def test_eval_quality_on_a_frozen_eval_file_works_after_stage_05_is_rebuilt(ws, tmp_path):
     from skillsmith import evalquality
+
     from .test_evalrun import _quality_responder
     run_all(ws)
     frozen = tmp_path / "frozen.json"
@@ -795,6 +799,7 @@ def _spec_fixture():
 # ---- literature-backed improvements (triad + artifact types, fit check, exposure dedup, provenance, audit, strict eval)
 def test_triad_gate_blocks_execution_skill_when_any_condition_is_false():
     from pydantic import ValidationError
+
     from skillsmith.schema import SourceMap
     base = {
         "source_type": "empirical", "actionable": True, "gate_reason": "Benchmarks 8 models.",

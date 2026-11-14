@@ -69,6 +69,7 @@ def test_consolidate_rejects_invented_number(ws):
 # ---- AC11
 def test_mcp_server_lists_and_serves_skills(ws, tmp_path):
     from mcp.shared.memory import create_connected_server_and_client_session as connect
+
     from skillsmith.mcp_server import build_server
     run_all(ws)
     dest = tmp_path / "skills"

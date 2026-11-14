@@ -9,9 +9,8 @@ import re
 from pathlib import Path
 from typing import Annotated, Literal, Optional
 
-from pydantic import Field
-
 from mcp.server.fastmcp import FastMCP
+from pydantic import Field
 
 STOP = {"the", "and", "for", "with", "that", "this", "when", "from", "into", "your", "have", "what",
         "how", "are", "can", "does", "was", "not", "but", "use", "using", "about", "need", "want"}
@@ -54,7 +53,7 @@ def select_units(playbook: str, situation: str, limit: int = 3) -> list[tuple[st
     scored = []
     for uid, sec in _unit_sections(playbook).items():
         title = sec.splitlines()[0]
-        when = next((l for l in sec.splitlines() if l.startswith("When:")), "")
+        when = next((ln for ln in sec.splitlines() if ln.startswith("When:")), "")
         score = len(want & _words(title + " " + when))
         if score:
             scored.append((uid, score, sec))

@@ -13,12 +13,12 @@ from pydantic import ValidationError
 
 from . import verify as verify_mod
 from .accounting import account, expand_excluded, expand_merge_ids
-from .consolidate import ConsolidationPlan, PlanError, to_result
 from .compile import CompileError, compile_spec, exposure_report, write_compiled
+from .consolidate import ConsolidationPlan, PlanError, to_result
 from .evals import write_evals
-from .gates import GateError, require_prereqs
+from .gates import require_prereqs
 from .ingest import IngestAbstain, ingest_pdf, segment
-from .schema import (ActionUnit, ChapterTriage, ConsolidationResult, EvalSet, SourceMap)
+from .schema import ActionUnit, ArtifactType, ConsolidationResult, EvalSet, SourceMap
 from .workspace import STAGES, Workspace
 
 RETRIES = 2
@@ -162,7 +162,6 @@ def stage_ingest(w: Workspace) -> Path:
     except IngestAbstain as e:
         raise StageAbstain(str(e)) from e
     secs = segment(ing)
-    by_pdf = {p.pdf_page: p for p in ing.pages}
     stg = _fresh_staging(w, "01_ingest")
     (stg / "text").mkdir()
     meta = {"source": pdfs[0].name, "pdf_pages": len(ing.pages), "offset": ing.offset,
@@ -299,7 +298,8 @@ def stage_extract(w: Workspace, provider) -> Path:
                       ALLOWED_PAGES=sorted(allowed), SECTION_TEXT=text,
                       SCHEMA=json.dumps(ActionUnit.model_json_schema()))
 
-        def parse(data, allowed=allowed, text_n=text_n, text_nums=text_nums, page_text=page_text):
+        def parse(data, allowed=allowed, text_n=text_n, text_nums=text_nums, page_text=page_text,
+                  printed_for=printed_for):
             reason = None
             if isinstance(data, dict):
                 reason = (data.get("no_units_reason") or "").strip() or None
@@ -413,7 +413,8 @@ def stage_consolidate(w: Workspace, provider) -> Path:
         mine = [u for u in all_units if _section_of(u.id) in set(prop.section_ids)]
         if not mine:
             raise StageError(f"no extracted units for proposed skill {prop.name!r}; fix the map at the gate")
-        batches, cur = [[]], 0
+        batches: list[list[ActionUnit]] = [[]]
+        cur = 0
         for u in mine:
             t = est_tokens_units(u)
             if batches[-1] and cur + t > BATCH_TOKENS:
@@ -510,7 +511,7 @@ def stage_write(w: Workspace) -> Path:
     modes: list[str] = []
     exposure: list[str] = []
     source = source_info(w)
-    artifacts: dict[str, str] = {}
+    artifacts: dict[str, ArtifactType] = {}
     sm_f = w.output("02_map") / "source_map.json"
     if sm_f.is_file():
         artifacts = {p.name: p.artifact for p in

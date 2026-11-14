@@ -7,21 +7,51 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    name: test (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
     defaults:
       run:
         working-directory: engine
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.10", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install (non-editable, to test the shipped templates)
+      - name: Install (non-editable, so the shipped templates are what gets tested)
         run: |
           python -m pip install --upgrade pip
-          pip install ".[dev]" jsonschema
-      - name: Tests (scripted fake LLM and synthetic PDFs; no live model, no API key)
+          pip install ".[dev,anthropic,openai]"
+      - name: Lint (ruff)
+        run: python -m ruff check .
+      - name: Type check (mypy)
+        run: python -m mypy src
+      - name: Tests (scripted fake LLM and synthetic PDFs; no live model and no API key)
         run: python -m pytest -q
+
+  wheel:
+    name: wheel builds, installs and runs
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build the wheel and check its metadata
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build --wheel --outdir dist engine
+          twine check dist/*
+      - name: Install the wheel in a clean virtual environment and run the CLI from it
+        run: |
+          python -m venv /tmp/wheel-venv
+          /tmp/wheel-venv/bin/pip install dist/*.whl
+          /tmp/wheel-venv/bin/skillsmith --help
+          /tmp/wheel-venv/bin/skillsmith init /tmp/smoke --source engine/tests/fixtures/sample.pdf
+          /tmp/wheel-venv/bin/skillsmith run /tmp/smoke
+          /tmp/wheel-venv/bin/skillsmith status /tmp/smoke

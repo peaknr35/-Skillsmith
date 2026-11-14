@@ -29,7 +29,7 @@ openai = ["openai>=1.40"]
 langchain = ["langchain>=0.3", "langchain-core>=0.3"]
 mcp = ["mcp>=1.2,<2"]
 all = ["skillsmith[pdf,anthropic,openai,langchain,mcp]"]
-dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "build", "twine"]
+dev = ["pytest>=8", "pytest-cov", "jsonschema", "ruff", "mypy", "build", "twine"]
 
 [project.scripts]
 skillsmith = "skillsmith.cli:entry"
@@ -52,6 +52,11 @@ addopts = "-q"
 [tool.ruff]
 line-length = 100
 src = ["src", "tests"]
+extend-exclude = ["tests/qa"]  # one-off QA drill scripts, not part of the package
+
+[tool.ruff.lint]
+# An explicit rule set, so results do not drift with the ruff version that CI installs.
+select = ["E4", "E7", "E9", "F", "B", "I"]
 
 [tool.mypy]
 python_version = "3.10"

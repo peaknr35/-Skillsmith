@@ -1,6 +1,8 @@
 """LangChain adapter. Imports langchain lazily; the core never requires it."""
 from __future__ import annotations
 
+from typing import Any
+
 
 class LangChainProvider:
     """Wrap any LangChain chat model. Pass a model object, or a 'provider:model' string."""
@@ -13,7 +15,7 @@ class LangChainProvider:
                 raise RuntimeError("pip install 'skillsmith[langchain]'") from e
             provider, _, name = model.partition(":")
             model = init_chat_model(name, model_provider=provider)
-        self.model = model
+        self.model: Any = model
 
     def complete(self, system: str, user: str) -> str:
         try:

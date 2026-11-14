@@ -4,7 +4,8 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from skillsmith import compile as comp, gates, runner, verify, workspace
+from skillsmith import compile as comp
+from skillsmith import gates, runner, verify, workspace
 from skillsmith.ingest import IngestAbstain, ingest_pdf, segment
 from skillsmith.ingest.segment import Section, split_long
 from skillsmith.llm import FakeProvider

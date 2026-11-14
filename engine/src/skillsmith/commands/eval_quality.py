@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import click
+
 from .. import workspace
 from ._common import load_dotenv, ws_cb
 
@@ -27,7 +29,7 @@ def eval_quality(ws: Path, skill: str | None, provider: str, model: str | None, 
     load_dotenv(Path.cwd(), ws, ws.parent)
     gen = cli.get_provider(provider, model)
     judge = cli.get_provider(provider, judge_model) if judge_model else gen
-    run_dir = evalquality.run(w, gen, judge, skill, model or getattr(gen, "model", ""),
-                              judge_model or getattr(judge, "model", ""), repeats, not skill_only, workers, eval_file)
+    run_dir = evalquality.run(w, gen, judge, skill, str(model or getattr(gen, "model", "") or ""),
+                              str(judge_model or getattr(judge, "model", "") or ""), repeats, not skill_only, workers, eval_file)
     click.echo(f"quality run saved: {run_dir}")
     click.echo((run_dir / "report.md").read_text(encoding="utf-8"))

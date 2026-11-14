@@ -15,10 +15,9 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
-from pathlib import Path
 
 from .accounting import account
-from .compile import exposure_report, compile_spec
+from .compile import compile_spec, exposure_report
 from .runner import source_info
 from .schema import ActionUnit, SkillSpec, SourceMap
 from .workspace import Workspace
@@ -218,7 +217,6 @@ def audit_workspace(w: Workspace) -> AuditReport:
                 # include each cited page plus the first 300 chars of the next page (cross-page sentences)
                 cited_txt = " ".join(pages.get(pg, "") + " " + pages.get(pg + 1, "")[:300] for pg in pdf_pgs)
                 cited_words = _words(cited_txt)
-                cited_norm = _norm_ws(cited_txt)
                 q_checked, q_missing = 0, []
                 for ct in cites:
                     if ct.quote_hint:

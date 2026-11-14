@@ -1,8 +1,8 @@
 """Config command: inspect effective Skillsmith configuration and layer resolution."""
 from __future__ import annotations
 
-from pathlib import Path
 import click
+
 from ..config import load_settings
 from ..console import console, is_interactive, kv_table
 

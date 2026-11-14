@@ -109,16 +109,29 @@ Honest status, v0.2:
 |---|---|
 | `engine/` | The Python package (`src/skillsmith`), tests, the spec and QA reports (`build/`) and lessons (`library/`) |
 | `skills/` | Skills: one built by Skillsmith from a paper, and `skillsmith-pipeline`, which teaches an agent to run Skillsmith |
-| `.github/` | CI (runs the tests in `engine/`) |
+| `.github/` | CI: lint, type check and tests on Linux and Windows, plus a wheel build-and-run check |
 
 Runs (`runs/`) and source PDFs are not committed.
+
+## Model settings (optional)
+
+Nothing below is sent unless you set it, so no model or server receives a parameter it might reject:
+
+| Variable | Effect |
+|---|---|
+| `SKILLSMITH_MODEL` | Model name (the Anthropic default is `claude-sonnet-5-5`) |
+| `SKILLSMITH_MAX_TOKENS` | Reply limit (Anthropic default 32000; unset for OpenAI-compatible servers) |
+| `SKILLSMITH_TEMPERATURE` | Sampling temperature, e.g. `0` for more repeatable extraction |
+| `SKILLSMITH_TIMEOUT` | Request timeout in seconds |
+
+A reply cut off by the limit is an explicit error for both provider families, never a silently truncated result.
 
 ## Development
 
 ```bash
 cd engine
 pip install -e ".[dev]"
-pytest
+ruff check . && mypy src && pytest
 ```
 
 ## Licence

@@ -3,23 +3,23 @@ Rich gives tables and colour on a terminal; output is plain when piped.
 """
 from __future__ import annotations
 
-import sys
 from pathlib import Path
+
 import click
 
-from . import gates, runner, verify, workspace
+from . import gates, runner, workspace
 from .commands import ALL
-from .commands._common import (
+from .commands._common import (  # noqa: F401  re-exported: tests and callers use these as skillsmith.cli.<name>
     LLM_STAGES,
     load_dotenv,
-    runs_dir,
-    resolve_ws,
-    resolve_new,
-    ws_cb,
     new_cb,
+    resolve_new,
+    resolve_ws,
+    runs_dir,
+    ws_cb,
 )
-from .llm import get_provider
-from .console import is_interactive, console
+from .console import console, is_interactive
+from .llm import get_provider  # noqa: F401  re-exported (tests patch skillsmith.cli.get_provider)
 
 
 def _rich():

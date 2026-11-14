@@ -21,8 +21,8 @@ try:
     err_console = Console(stderr=True, theme=THEME)
     HAS_RICH = True
 except ImportError:  # pragma: no cover
-    console = None
-    err_console = None
+    console = None  # type: ignore[assignment]  # rich missing: callers print plain text
+    err_console = None  # type: ignore[assignment]
     HAS_RICH = False
 
 SPINNER = "dots12"

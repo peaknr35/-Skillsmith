@@ -1,7 +1,6 @@
 """Render a validated EvalSet to evals/<skill>/{eval.json, triggers.md, tasks.md}."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 from .schema import EvalSet

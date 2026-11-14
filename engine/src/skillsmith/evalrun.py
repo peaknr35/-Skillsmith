@@ -13,10 +13,10 @@ from __future__ import annotations
 
 import json
 import random
-import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from .runner import StageError, extract_json
 from .schema import EvalSet, EvalTask
@@ -73,7 +73,7 @@ def trigger_test(provider, name: str, description: str, es: EvalSet,
               + "\n".join(f"- {n}: {d}" for n, d in skills)
               + '\nChoose the single skill whose description matches the request, or none. '
                 'Reply with ONLY JSON: {"selected_skill": "<skill name or none>"}.')
-    rows = []
+    rows: list[dict[str, Any]] = []
     for expected, prompts in ((True, es.should_fire), (False, es.should_not_fire)):
         for p in prompts:
             raw = _call(provider, system, p)

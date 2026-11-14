@@ -172,7 +172,7 @@ def split_long(sec: Section, max_tokens: int = MAX_TOKENS) -> list[Section]:
                 cur_marker = q
     out = []
     for i, part in enumerate(p for p in parts if p):
-        ms = [MARK.match(q) for q in part if MARK.match(q)]
+        ms = [m for m in (MARK.match(q) for q in part) if m]
         lo_m, hi_m = ms[0], ms[-1]
         lo = int(lo_m.group(2))
         hi = int(hi_m.group(2))

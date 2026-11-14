@@ -1,5 +1,4 @@
 """Tests for config loading and cascading fallbacks."""
-import pytest
 from skillsmith.config import load_settings
 
 

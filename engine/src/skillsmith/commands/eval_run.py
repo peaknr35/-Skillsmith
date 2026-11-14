@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+
 import click
+
 from .. import workspace
 from ._common import load_dotenv, ws_cb
 
@@ -20,6 +22,6 @@ def eval_run(ws: Path, skill: str | None, provider: str, model: str | None, part
     w = workspace.load(ws)
     load_dotenv(Path.cwd(), ws, ws.parent)
     prov = cli.get_provider(provider, model)
-    run_dir = evalrun.run(w, prov, skill, model or getattr(prov, "model", ""), with_playbook, parts)
+    run_dir = evalrun.run(w, prov, skill, str(model or getattr(prov, "model", "") or ""), with_playbook, parts)
     click.echo(f"eval run saved: {run_dir}")
     click.echo((run_dir / "report.md").read_text(encoding="utf-8"))
