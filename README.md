@@ -75,6 +75,7 @@ skillsmith export my-run --dest ~/.claude/skills
 
 | Command | What it does |
 |---|---|
+| `skillsmith config` | Show active configuration settings, resolved layer precedence, and warnings |
 | `skillsmith verify my-run` | Mechanical check: every number in the output appears in a page-cited unit |
 | `skillsmith audit my-run` | Section coverage ledger, unit accounting from stage 03 to 04, and a step-to-page citation screen |
 | `skillsmith eval-run my-run` | Trigger test (skill among distractors) and a with/without-skill task comparison |
@@ -90,7 +91,7 @@ skillsmith export my-run --dest ~/.claude/skills
 
 Honest status, v0.2:
 
-- **Tests:** over 110 tests, all with a scripted fake LLM and synthetic PDFs. They test the pipeline's checks, not the quality of any generated skill. No fresh-eyes review has covered the newest changes.
+- **Tests:** 128 tests, all with a scripted fake LLM and synthetic PDFs. They test the pipeline's checks, not the quality of any generated skill. No fresh-eyes review has covered the newest changes.
 - **Real run:** one paper (the 21-page ICM paper) went through every stage on a live model, with two human gates. The audit shows no unaccounted sections and no dropped units (32 extracted, 21 consolidated), and all 21 units have lexical citation support on their cited pages. That check is a screen, not proof a claim is faithful.
 - **Does the skill improve answers?** Not shown. In a blind judge test (12 comparisons per run, Sonnet 5.5 answering, Opus 5.5 judging), answers without the skill were preferred in 10, 9 and 9 of 12 across three successive rebuilds of the skill. Rebuilds fixed real problems the judge named (unexplained sources, internal ids and page cites leaking into answers), and the gap narrowed, but the skill still lost more often than it won, and it won most clearly when the user asked about the paper itself. The source paper itself reports no controlled comparison against ordinary good practice. Treat the generated skill as a way to apply that method, not as proof it beats generic advice.
 

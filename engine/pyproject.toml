@@ -8,20 +8,52 @@ version = "0.2.0"
 description = "From 'we found' to 'do this': compile papers, articles and books into agent skills."
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["pymupdf>=1.24", "pydantic>=2.5", "mcp>=1.2,<2", "click>=8.1", "rich>=13"]
+license = { text = "MIT" }
+keywords = ["llm", "agents", "claude", "mcp", "skills", "research", "paper-to-skill"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Environment :: Console",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "pymupdf>=1.24",
+  "pydantic>=2.5",
+  "mcp>=1.2,<2",
+  "click>=8.1",
+  "rich>=13",
+]
 
 [project.optional-dependencies]
+pdf = ["pymupdf>=1.24"]
 anthropic = ["anthropic>=0.40"]
 openai = ["openai>=1.40"]
 langchain = ["langchain>=0.3", "langchain-core>=0.3"]
-dev = ["pytest>=8"]
+mcp = ["mcp>=1.2,<2"]
+all = ["skillsmith[pdf,anthropic,openai,langchain,mcp]"]
+dev = ["pytest>=8", "pytest-cov", "ruff", "mypy", "build", "twine"]
 
 [project.scripts]
 skillsmith = "skillsmith.cli:entry"
 
+[project.urls]
+Homepage = "https://github.com/peaknr35/-Skillsmith"
+Repository = "https://github.com/peaknr35/-Skillsmith.git"
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/skillsmith"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "pyproject.toml"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
