@@ -50,3 +50,11 @@ def test_cli_init_requires_pdf_extension(tmp_path):
     result = runner.invoke(cli, ["init", str(tmp_path / "ws"), "--source", str(txt)])
     assert result.exit_code != 0
     assert "source must be a .pdf file" in result.output
+
+
+def test_cli_eval_quality_help_has_baseline_source():
+    runner = CliRunner()
+    result = runner.invoke(cli, ["eval-quality", "--help"])
+    assert result.exit_code == 0
+    assert "--baseline-source" in result.output
+

@@ -72,8 +72,37 @@ def judge_pair(provider, request: str, opt1: str, opt2: str) -> dict:
         return {"ok": False, "error": raw[:200]}
 
 
-def _one_rep(gen, judge, request, treatment_system, task_i, rep, out_dir, rng_seed):
-    base = _call(gen, BASELINE_SYSTEM, request)
+def load_source_text(w: Workspace, max_chars: int = 80_000) -> str:
+    """Load the ingested text from stage 01 to serve as the 'source available' baseline condition."""
+    text_dir = w.output("01_ingest") / "text"
+    if text_dir.is_dir():
+        parts = []
+        for f in sorted(text_dir.glob("*.md")):
+            parts.append(f.read_text(encoding="utf-8"))
+        full = "\n\n".join(parts)
+        if full.strip():
+            return full[:max_chars]
+    pages_f = w.output("01_ingest") / "pages.jsonl"
+    if pages_f.is_file():
+        parts = []
+        for line in pages_f.read_text(encoding="utf-8").splitlines():
+            if not line.strip():
+                continue
+            try:
+                d = json.loads(line)
+                txt = d.get("text") or " ".join(d.get("blocks", []))
+                if txt:
+                    parts.append(f"[Page {d.get('pdf_page', '?')}]\n{txt}")
+            except Exception:
+                continue
+        full = "\n\n".join(parts)
+        if full.strip():
+            return full[:max_chars]
+    return ""
+
+
+def _one_rep(gen, judge, request, treatment_system, baseline_system, task_i, rep, out_dir, rng_seed):
+    base = _call(gen, baseline_system, request)
     treat = _call(gen, treatment_system, request)
     (out_dir / f"task_{task_i:02d}_rep{rep}_baseline.md").write_text(f"# Task {task_i} rep {rep} baseline\n\n{request}\n\n---\n\n{base}\n", encoding="utf-8")
     (out_dir / f"task_{task_i:02d}_rep{rep}_treatment.md").write_text(f"# Task {task_i} rep {rep} treatment\n\n{request}\n\n---\n\n{treat}\n", encoding="utf-8")
@@ -95,23 +124,31 @@ def _one_rep(gen, judge, request, treatment_system, task_i, rep, out_dir, rng_se
 
 
 def quality_comparison(gen, judge, skill_dir: Path, es: EvalSet, out_dir: Path, repeats: int = 3,
-                       with_playbook: bool = True, seed: int = 0, workers: int = 4) -> list[dict]:
+                       with_playbook: bool = True, seed: int = 0, workers: int = 4,
+                       baseline_source_text: str | None = None) -> list[dict]:
     skill_text = (skill_dir / "SKILL.md").read_text(encoding="utf-8")
     if with_playbook:  # the intended retrieval path: the model has read the playbook for the unit it applies
         skill_text += "\n\n" + (skill_dir / "playbook.md").read_text(encoding="utf-8")
     treatment_system = (BASELINE_SYSTEM + "\n\nA skill is loaded for this conversation. Apply it when the request "
                         "falls within its description.\n\n" + skill_text)
+    if baseline_source_text:
+        baseline_system = (BASELINE_SYSTEM + "\n\nReference source text is available for this conversation. "
+                           "Use it when relevant to the user's request:\n\n" + baseline_source_text)
+    else:
+        baseline_system = BASELINE_SYSTEM
     out_dir.mkdir(parents=True, exist_ok=True)
     jobs = []
     for i, t in enumerate(es.tasks, 1):
         for rep in range(1, repeats + 1):
-            jobs.append((t.prompt, treatment_system, i, rep, out_dir, seed * 100003 + i * 101 + rep))
+            jobs.append((t.prompt, treatment_system, baseline_system, i, rep, out_dir, seed * 100003 + i * 101 + rep))
     with ThreadPoolExecutor(max_workers=max(1, workers)) as ex:
         futures = [ex.submit(_one_rep, gen, judge, *j) for j in jobs]
         rows = [f.result() for f in futures]
     neutral = {i: t.neutral for i, t in enumerate(es.tasks, 1)}
+    expect_apply = {i: t.expect_apply for i, t in enumerate(es.tasks, 1)}
     for r in rows:
         r["neutral"] = neutral[r["task"]]
+        r["expect_apply"] = expect_apply.get(r["task"], True)
     return rows
 
 
@@ -128,7 +165,10 @@ def summarize(rows: list[dict]) -> dict:
         return {"n": len(sub), "treatment_wins": w, "baseline_wins": lost, "ties": t, "sign_test_p": sign_test_p(w, lost),
                 "mean_scores": means}
 
-    return {"all": block(ok), "neutral_only": block([r for r in ok if r["neutral"]]),
+    return {"all": block(ok),
+            "neutral_only": block([r for r in ok if r.get("neutral")]),
+            "should_apply_only": block([r for r in ok if r.get("expect_apply", True)]),
+            "should_not_apply_only": block([r for r in ok if not r.get("expect_apply", True)]),
             "failed_judgments": len(rows) - len(ok),
             "mean_chars": {"baseline": sum(r["baseline_chars"] for r in rows) / len(rows) if rows else 0,
                            "treatment": sum(r["treatment_chars"] for r in rows) / len(rows) if rows else 0},
@@ -141,37 +181,46 @@ def _f2(v) -> str:
     return "n/a" if v is None else f"{v:.2f}"
 
 
-def render_report(skill: str, gen_model: str, judge_model: str, repeats: int, with_playbook: bool, s: dict) -> str:
+def render_report(skill: str, gen_model: str, judge_model: str, repeats: int, with_playbook: bool, s: dict,
+                  baseline_source: bool = False) -> str:
     def fmt(b):
         p = b["sign_test_p"]
         return (f"treatment preferred {b['treatment_wins']}, baseline preferred {b['baseline_wins']}, tie {b['ties']} "
                 f"(n={b['n']}); exact sign test p = {'n/a' if p is None else f'{p:.3f}'}")
 
+    baseline_label = "Source available (raw document text in context)" if baseline_source else "Generic baseline (no added resource)"
     L = [f"# Blind quality judgement: {skill}", "",
-         f"Generator: {gen_model}. Judge: {judge_model}. {repeats} repeat(s) per task. Treatment context: SKILL.md"
-         f"{' + playbook.md' if with_playbook else ' only'}.", "",
+         f"Generator: {gen_model}. Judge: {judge_model}. {repeats} repeat(s) per task.",
+         f"Baseline condition: {baseline_label}.",
+         f"Treatment context: SKILL.md{' + playbook.md' if with_playbook else ' only'}.", "",
          "> Limits: small samples; a model judge; treatment answers often carry visible markers (unit ids, page cites), so the "
          "judge is only partly blind; the generator and judge may share a model family; the tasks were generated by the "
          "pipeline that built the skill. A model preference is a signal, not proof that the advice is better. Read the saved "
          "answers.", "",
          "Criteria (fixed in code before judging, none mention the skill): " + "; ".join(CRITERIA), "",
-         "## Overall preference", "", f"- All tasks: {fmt(s['all'])}", f"- Neutral tasks only: {fmt(s['neutral_only'])}",
+         "## Overall preference", "",
+         f"- All tasks: {fmt(s['all'])}",
+         f"- Neutral tasks only: {fmt(s['neutral_only'])}",
+         f"- Should-apply tasks (expect_apply=true): {fmt(s['should_apply_only'])}",
+         f"- Should-not-apply tasks (near-miss): {fmt(s['should_not_apply_only'])}",
          f"- Judgments that failed to parse: {s['failed_judgments']}", "",
-         "## Mean scores (1-5)", "", "| criterion | without skill | with skill | without (neutral only) | with (neutral only) |", "|---|---|---|---|---|"]
+         "## Mean scores (1-5)", "", "| criterion | baseline | with skill | baseline (neutral) | with skill (neutral) |", "|---|---|---|---|---|"]
     for k in CRITERIA:
         a, n = s["all"]["mean_scores"], s["neutral_only"]["mean_scores"]
         L.append(f"| {k} | {_f2(a['baseline'][k])} | {_f2(a['treatment'][k])} | {_f2(n['baseline'][k])} | {_f2(n['treatment'][k])} |")
     L += ["", "## Confounds to read next to the numbers", "",
-          f"- Mean answer length: {s['mean_chars']['baseline']:.0f} characters without the skill, {s['mean_chars']['treatment']:.0f} with it.",
+          f"- Mean answer length: {s['mean_chars']['baseline']:.0f} characters for baseline, {s['mean_chars']['treatment']:.0f} with skill.",
           f"- Answers showing unit ids or page cites (visible markers): {s['treatment_answers_with_visible_markers']} of {s['n_rows']} with the skill, "
           f"{s['baseline_answers_with_visible_markers']} of {s['n_rows']} without.", ""]
     return "\n".join(L)
 
 
 def run(w: Workspace, gen, judge, skill: str | None = None, gen_model: str = "", judge_model: str = "",
-        repeats: int = 3, with_playbook: bool = True, workers: int = 4, eval_file: Path | None = None) -> Path:
+        repeats: int = 3, with_playbook: bool = True, workers: int = 4, eval_file: Path | None = None,
+        baseline_source: bool = False) -> Path:
     """eval_file: judge a rebuilt skill on a FROZEN eval set (an earlier eval.json) so before/after is comparable;
-    re-running stage 05 marks stage 06 stale, which would otherwise block this."""
+    re-running stage 05 marks stage 06 stale, which would otherwise block this.
+    baseline_source: if True, provide extracted stage-01 document text to the baseline condition ('Source Available')."""
     if eval_file is None and not w.done("06_eval"):
         raise EvalRunError("stage 06_eval is not done")
     d = next((x for x in w.skill_dirs() if skill in (None, x.name)), None)
@@ -179,8 +228,11 @@ def run(w: Workspace, gen, judge, skill: str | None = None, gen_model: str = "",
         raise EvalRunError(f"skill {skill!r} not found")
     es = EvalSet.model_validate_json(Path(eval_file).read_text(encoding="utf-8")) if eval_file else load_eval(w, d.name)
     run_dir = w.stage_dir("06_eval") / "quality" / d.name / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    rows = quality_comparison(gen, judge, d, es, run_dir, repeats, with_playbook, workers=workers)
+    source_text = load_source_text(w) if baseline_source else None
+    rows = quality_comparison(gen, judge, d, es, run_dir, repeats, with_playbook, workers=workers,
+                              baseline_source_text=source_text)
     s = summarize(rows)
     (run_dir / "results.json").write_text(json.dumps({"rows": rows, "summary": s}, indent=2), encoding="utf-8")
-    (run_dir / "report.md").write_text(render_report(d.name, gen_model, judge_model, repeats, with_playbook, s), encoding="utf-8")
+    (run_dir / "report.md").write_text(render_report(d.name, gen_model, judge_model, repeats, with_playbook, s,
+                                                     baseline_source=baseline_source), encoding="utf-8")
     return run_dir

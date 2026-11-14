@@ -6,7 +6,7 @@ Skillsmith is an auditable compiler that converts procedural research papers int
 
 Not every paper should become an execution skill. Skillsmith runs a six-stage pipeline with an applicability gate (choosing between an execution skill, a decision guide, an evidence reference, or explicit abstention), two human review gates, deterministic provenance checks (dual-page citations, verbatim quote checks, zero silent unit drops, and mechanical number verification), and blind A/B evaluation against the base model.
 
-What the checks do and do not show: they record whether sections and extracted units are accounted for, check that quotes and numbers appear on the cited pages, and test generated playbooks on set tasks. They can reveal omissions and unsupported claims. They cannot prove that an extraction is faithful (a step can quote a real phrase and still invert its meaning), so the two review gates need a human reading the source.
+Skillsmith records whether identified sections and extracted units are accounted for, checks citations mechanically, and evaluates generated playbooks on specified tasks. These checks can reveal omissions and unsupported claims, but human review is still needed to judge whether the extraction faithfully represents the source (a step can quote a real phrase and still invert its meaning). The two review gates require a human reading the source.
 
 ## What you get
 

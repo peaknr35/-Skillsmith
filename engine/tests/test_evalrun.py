@@ -288,6 +288,8 @@ def test_quality_judge_is_blind_unblinds_correctly_and_counts_repeats(ws):
     assert {r["treatment_first"] for r in rows} == {True, False}  # presentation order really varies
     assert s["all"]["treatment_wins"] == len(rows) and s["all"]["sign_test_p"] is not None
     assert s["neutral_only"]["n"] == 3 * sum(t.neutral for t in es.tasks)
+    assert s["should_apply_only"]["n"] == 3 * sum(t.expect_apply for t in es.tasks)
+    assert s["should_not_apply_only"]["n"] == 3 * sum(not t.expect_apply for t in es.tasks)
     assert s["treatment_answers_with_visible_markers"] == len(rows) and s["baseline_answers_with_visible_markers"] == 0
     for i in range(1, len(es.tasks) + 1):
         for rep in (1, 2, 3):
@@ -324,3 +326,21 @@ def test_cli_eval_quality_end_to_end_and_judge_model_is_separate(ws, monkeypatch
     assert cli.main(["eval-quality", str(ws.root), "--model", "gen-m", "--judge-model", "judge-m", "--repeats", "1"]) == 0
     assert made == ["gen-m", "judge-m"]  # a different judge model gets its own provider
     assert "Blind quality judgement" in capsys.readouterr().out
+
+
+def test_quality_judge_baseline_source_supplies_document_text(ws):
+    from skillsmith import evalquality
+    run_all(ws)
+    calls = []
+
+    def resp(system, user):
+        calls.append((system, user))
+        return _quality_responder()(system, user)
+
+    prov = FakeProvider(resp)
+    run_dir = evalquality.run(ws, prov, prov, repeats=1, baseline_source=True)
+    report = (run_dir / "report.md").read_text(encoding="utf-8")
+    assert "Source available" in report
+    baseline_calls = [s for s, u in calls if "Reference source text is available" in s]
+    assert len(baseline_calls) > 0
+
