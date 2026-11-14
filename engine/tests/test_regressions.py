@@ -1,5 +1,6 @@
 """Regression tests for the independent QA findings (B2-B7, V1-V6) and amendment A2."""
 import json
+from pathlib import Path
 
 import pymupdf
 import pytest
@@ -121,7 +122,7 @@ def test_number_tokenizer(text, expected):
 
 def test_page_number_does_not_source_a_value():
     from skillsmith.schema import ActionUnit
-    u = ActionUnit.model_validate(json.load(open("tests/fixtures/unit_valid.json")))
+    u = ActionUnit.model_validate(json.load(open(Path(__file__).parent / "fixtures" / "unit_valid.json")))
     u.evidence[0].cite.printed_page = 12
     assert "12" not in verify.source_numbers([u])
     rep = verify.check_text("1. Use 12 chunks.\n", verify.source_numbers([u]))
@@ -143,7 +144,7 @@ def test_description_must_be_trigger_first_and_third_person():
                 "Use when you build retrieval over long documents."):
         with pytest.raises(ValidationError):
             SkillProposal(name="x-y", description=bad, section_ids=["ch01"])
-    spec = json.load(open("tests/fixtures/skillspec_valid.json"))
+    spec = json.load(open(Path(__file__).parent / "fixtures" / "skillspec_valid.json"))
     spec["description"] = "Applies the RAPTOR paper to retrieval for long documents and more."
     with pytest.raises(ValidationError):
         SkillSpec.model_validate(spec)
@@ -788,7 +789,7 @@ def evalrun_error():
 
 
 def _spec_fixture():
-    return SkillSpec.model_validate(json.load(open("tests/fixtures/skillspec_valid.json")))
+    return SkillSpec.model_validate(json.load(open(Path(__file__).parent / "fixtures" / "skillspec_valid.json")))
 
 
 # ---- literature-backed improvements (triad + artifact types, fit check, exposure dedup, provenance, audit, strict eval)
