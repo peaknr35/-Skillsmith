@@ -4,6 +4,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import click
+
+from ..workspace import WorkspaceError
+
 LLM_STAGES = ("02_map", "03_extract", "04_consolidate", "06_eval")
 
 
@@ -34,10 +38,17 @@ def load_dotenv(*dirs: Path) -> list[Path]:
     return read
 
 
-def runs_dir() -> Path | None:
-    """Where bare run names live: $SKILLSMITH_RUNS_DIR, else the nearest `runs` folder at or above the
-    current directory (up to five levels)."""
-    env = os.environ.get("SKILLSMITH_RUNS_DIR")
+def _cfg_runs_dir(ctx) -> str | None:
+    """runs_dir from the config layers (--config file, ./skillsmith.toml, user config)."""
+    from ..config import load_settings
+    obj = ctx.find_root().obj if ctx is not None else None
+    return load_settings((obj or {}).get("config_path")).runs_dir
+
+
+def runs_dir(configured: str | None = None) -> Path | None:
+    """Where bare run names live: $SKILLSMITH_RUNS_DIR, else `runs_dir` from the config, else the nearest
+    `runs` folder at or above the current directory (up to five levels)."""
+    env = os.environ.get("SKILLSMITH_RUNS_DIR") or configured
     if env:
         return Path(env)
     here = Path.cwd().resolve()
@@ -51,23 +62,39 @@ def _is_bare(p: Path) -> bool:
     return len(p.parts) == 1 and not p.is_absolute() and p.anchor == ""
 
 
-def resolve_ws(p: Path) -> Path:
-    """An existing path wins; a bare name (icm-paper) is looked up in the runs folder."""
+def resolve_ws(p: Path, configured: str | None = None) -> Path:
+    """An existing path wins; a bare name (icm-paper) is looked up in the runs folder.
+    A bare name found nowhere is an error that says where it looked."""
     if p.exists() or not _is_bare(p):
         return p
-    r = runs_dir()
-    return (r / p) if r and (r / p).exists() else p
+    r = runs_dir(configured)
+    if r and (r / p).exists():
+        return r / p
+    where = f"the runs folder {r}" if r else "a runs folder (none found; set SKILLSMITH_RUNS_DIR)"
+    raise WorkspaceError(f"no run named {str(p)!r}: looked in the current folder and {where}")
 
 
-def resolve_new(p: Path) -> Path:
+def resolve_new(p: Path, configured: str | None = None) -> Path:
     """For init: a bare name is created inside the runs folder when there is one."""
-    r = runs_dir()
+    r = runs_dir(configured)
     return (r / p) if _is_bare(p) and r else p
 
 
 def ws_cb(ctx, param, value):
-    return resolve_ws(value) if value is not None else None
+    return resolve_ws(value, _cfg_runs_dir(ctx)) if value is not None else None
 
 
 def new_cb(ctx, param, value):
-    return resolve_new(value) if value is not None else None
+    return resolve_new(value, _cfg_runs_dir(ctx)) if value is not None else None
+
+
+def build_provider(ctx: click.Context, provider: str | None, model: str | None):
+    """Pick provider/model/base_url from flags, then env, then config files; warn about ignored settings."""
+    from .. import cli
+    from ..config import load_settings
+    s = load_settings((ctx.find_root().obj or {}).get("config_path"), provider=provider, model=model)
+    for w in s.warnings:
+        click.echo(f"WARN: {w}", err=True)
+    if s.base_url:
+        return cli.get_provider(s.provider, s.model, base_url=s.base_url)
+    return cli.get_provider(s.provider, s.model)

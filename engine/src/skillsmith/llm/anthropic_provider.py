@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from .base import TruncatedOutput, optional_float
+from .base import TruncatedOutput, check_positive, env_temperature, env_timeout, optional_int
 
 __all__ = ["AnthropicProvider", "TruncatedOutput"]  # TruncatedOutput stays importable from here
 
@@ -20,12 +20,14 @@ class AnthropicProvider:
             raise RuntimeError("pip install 'skillsmith[anthropic]'") from e
         if not os.environ.get("ANTHROPIC_API_KEY"):
             raise RuntimeError("ANTHROPIC_API_KEY is not set")
-        self.timeout = timeout if timeout is not None else optional_float("SKILLSMITH_TIMEOUT")
+        check_positive("timeout", timeout)
+        check_positive("max_tokens", max_tokens, integer=True)
+        self.timeout = timeout if timeout is not None else env_timeout()
         kw: dict[str, Any] = {"timeout": self.timeout} if self.timeout else {}
         self.client = anthropic.Anthropic(max_retries=5, **kw)
         self.model = model or os.environ.get("SKILLSMITH_MODEL", "claude-sonnet-5-5")
-        self.max_tokens = max_tokens or int(os.environ.get("SKILLSMITH_MAX_TOKENS", "32000"))
-        self.temperature = temperature if temperature is not None else optional_float("SKILLSMITH_TEMPERATURE")
+        self.max_tokens = max_tokens if max_tokens is not None else (optional_int("SKILLSMITH_MAX_TOKENS") or 32000)
+        self.temperature = temperature if temperature is not None else env_temperature()
 
     def complete(self, system: str, user: str) -> str:
         # Streaming: large max_tokens requests must stream. Stage 04 re-emits whole units,
@@ -40,6 +42,6 @@ class AnthropicProvider:
             msg = stream.get_final_message()
         if getattr(msg, "stop_reason", None) == "max_tokens":
             raise TruncatedOutput(
-                f"model output hit the {self.max_tokens}-token limit and was cut off; raise SKILLSMITH_MAX_TOKENS "
-                "or lower runner.BATCH_TOKENS so each call consolidates fewer units")
+                f"model output hit the {self.max_tokens}-token limit and was cut off; "
+                "raise SKILLSMITH_MAX_TOKENS (and check the model's own output limit)")
         return "".join(getattr(b, "text", "") for b in msg.content if getattr(b, "type", "") == "text")

@@ -22,7 +22,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install (non-editable, so the shipped templates are what gets tested)
+      - name: Install (non-editable; pytest runs with pythonpath cleared so the installed package is what gets tested)
         run: |
           python -m pip install --upgrade pip
           pip install ".[dev,anthropic,openai]"
@@ -31,7 +31,7 @@ jobs:
       - name: Type check (mypy)
         run: python -m mypy src
       - name: Tests (scripted fake LLM and synthetic PDFs; no live model and no API key)
-        run: python -m pytest -q
+        run: python -m pytest -o pythonpath=
 
   wheel:
     name: wheel builds, installs and runs

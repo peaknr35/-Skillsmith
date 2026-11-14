@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from .base import TruncatedOutput, optional_float, optional_int
+from .base import TruncatedOutput, check_positive, env_temperature, env_timeout, optional_int
 
 
 class OpenAICompatProvider:
@@ -19,7 +19,9 @@ class OpenAICompatProvider:
             from openai import OpenAI
         except ImportError as e:  # pragma: no cover
             raise RuntimeError("pip install 'skillsmith[openai]'") from e
-        self.timeout = timeout if timeout is not None else optional_float("SKILLSMITH_TIMEOUT")
+        check_positive("timeout", timeout)
+        check_positive("max_tokens", max_tokens, integer=True)
+        self.timeout = timeout if timeout is not None else env_timeout()
         kw: dict[str, Any] = {"timeout": self.timeout} if self.timeout else {}
         self.client = OpenAI(base_url=base_url or os.environ.get("OPENAI_BASE_URL"),
                              api_key=os.environ.get("OPENAI_API_KEY", "not-needed-for-local"), **kw)
@@ -28,7 +30,7 @@ class OpenAICompatProvider:
             raise RuntimeError("pass --model or set SKILLSMITH_MODEL")
         self.model: str = resolved
         self.max_tokens = max_tokens if max_tokens is not None else optional_int("SKILLSMITH_MAX_TOKENS")
-        self.temperature = temperature if temperature is not None else optional_float("SKILLSMITH_TEMPERATURE")
+        self.temperature = temperature if temperature is not None else env_temperature()
 
     def complete(self, system: str, user: str) -> str:
         kw: dict[str, Any] = {}
@@ -42,6 +44,6 @@ class OpenAICompatProvider:
         choice = r.choices[0]
         if getattr(choice, "finish_reason", None) == "length":
             raise TruncatedOutput(
-                "model output hit the token limit and was cut off; raise SKILLSMITH_MAX_TOKENS or lower "
-                "runner.BATCH_TOKENS so each call consolidates fewer units")
+                "model output hit the token limit and was cut off; raise SKILLSMITH_MAX_TOKENS "
+                "(and check the model's own output limit)")
         return choice.message.content or ""

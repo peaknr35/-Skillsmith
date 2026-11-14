@@ -48,7 +48,7 @@ cd -- -Skillsmith/engine
 pip install -e ".[anthropic]"     # or ".[openai]" (also Ollama via OPENAI_BASE_URL) or ".[langchain]"
 ```
 
-Put your key in a `.env` file in the repo root or the engine folder (never committed), or set it in the environment:
+Put your key in a `.env` file (never committed) in the current folder, the run folder, or any of their four parent folders, or set it in the environment. Variables already set in the environment win over `.env`:
 
 ```
 ANTHROPIC_API_KEY=...
@@ -69,7 +69,7 @@ skillsmith run my-run --provider anthropic    # 06 eval
 skillsmith export my-run --dest ~/.claude/skills
 ```
 
-`skillsmith status my-run` shows where a run is. `--stage 03_extract` re-runs one stage (this also marks every later stage pending).
+`skillsmith compile my-run` runs every remaining stage through 05 in one go and stops with an error at an unapproved gate. `skillsmith status my-run` shows where a run is. `--stage 03_extract` re-runs one stage (this also marks every later stage pending).
 
 ### Check what it made
 
@@ -91,7 +91,7 @@ skillsmith export my-run --dest ~/.claude/skills
 
 Honest status, v0.2:
 
-- **Tests:** 128 tests, all with a scripted fake LLM and synthetic PDFs. They test the pipeline's checks, not the quality of any generated skill. No fresh-eyes review has covered the newest changes.
+- **Tests:** a test suite (`engine/tests`), all with a scripted fake LLM and synthetic PDFs. They test the pipeline's checks, not the quality of any generated skill. No fresh-eyes review has covered the newest changes.
 - **Real run:** one paper (the 21-page ICM paper) went through every stage on a live model, with two human gates. The audit shows no unaccounted sections and no dropped units (32 extracted, 21 consolidated), and all 21 units have lexical citation support on their cited pages. That check is a screen, not proof a claim is faithful.
 - **Does the skill improve answers?** Not shown. In a blind judge test (12 comparisons per run, Sonnet 5.5 answering, Opus 5.5 judging), answers without the skill were preferred in 10, 9 and 9 of 12 across three successive rebuilds of the skill. Rebuilds fixed real problems the judge named (unexplained sources, internal ids and page cites leaking into answers), and the gap narrowed, but the skill still lost more often than it won, and it won most clearly when the user asked about the paper itself. The source paper itself reports no controlled comparison against ordinary good practice. Treat the generated skill as a way to apply that method, not as proof it beats generic advice.
 
@@ -119,12 +119,19 @@ Nothing below is sent unless you set it, so no model or server receives a parame
 
 | Variable | Effect |
 |---|---|
+| `SKILLSMITH_PROVIDER` | `anthropic`, `openai` or `langchain` (default `anthropic`) |
 | `SKILLSMITH_MODEL` | Model name (the Anthropic default is `claude-sonnet-5-5`) |
+| `SKILLSMITH_BASE_URL` | Server URL for the `openai` provider (e.g. Ollama); `OPENAI_BASE_URL` also works |
+| `SKILLSMITH_RUNS_DIR` | Folder where bare run names live (a typo here is created by `init`, so check the spelling) |
 | `SKILLSMITH_MAX_TOKENS` | Reply limit (Anthropic default 32000; unset for OpenAI-compatible servers) |
 | `SKILLSMITH_TEMPERATURE` | Sampling temperature, e.g. `0` for more repeatable extraction |
 | `SKILLSMITH_TIMEOUT` | Request timeout in seconds |
 
-A reply cut off by the limit is an explicit error for both provider families, never a silently truncated result.
+A reply cut off by the limit is an explicit error for both provider families, never a silently truncated result. A bad value (`inf`, `0`, a negative or non-numeric number) is an error that names the variable.
+
+### Config files
+
+`provider`, `model`, `base_url` and `runs_dir` can also be set in a TOML file. Highest priority first: command-line flags, `SKILLSMITH_*` variables, a file given with `skillsmith --config FILE`, `./skillsmith.toml`, `~/.config/skillsmith/config.toml`. Each key is checked on its own; a bad key is ignored with a warning that names the key (never its value). `skillsmith config` shows the result.
 
 ## Development
 

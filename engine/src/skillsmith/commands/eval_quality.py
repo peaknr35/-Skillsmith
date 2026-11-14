@@ -6,7 +6,7 @@ from pathlib import Path
 import click
 
 from .. import workspace
-from ._common import load_dotenv, ws_cb
+from ._common import build_provider, load_dotenv, ws_cb
 
 
 @click.command("eval-quality", help="Blind answer-quality comparison: repeated with/without-skill answers, judged "
@@ -14,7 +14,8 @@ from ._common import load_dotenv, ws_cb
                                     "actionability, honesty). Never mentions the skill to the judge.")
 @click.argument("ws", type=click.Path(path_type=Path), callback=ws_cb)
 @click.option("--skill", help="skill name (default: the first one)")
-@click.option("--provider", default="anthropic", type=click.Choice(["anthropic", "openai", "langchain", "fake"]))
+@click.option("--provider", default=None, type=click.Choice(["anthropic", "openai", "langchain"]),
+              help="default: SKILLSMITH_PROVIDER, then the config file, then anthropic")
 @click.option("--model", help="generator model")
 @click.option("--judge-model", help="judge model (default: same as the generator; a different one is more independent)")
 @click.option("--repeats", default=3, show_default=True, type=click.IntRange(1, 10))
@@ -22,13 +23,15 @@ from ._common import load_dotenv, ws_cb
 @click.option("--workers", default=4, show_default=True, type=click.IntRange(1, 8))
 @click.option("--eval-file", type=click.Path(path_type=Path, exists=True, dir_okay=False),
               help="judge on a frozen eval.json (use after rebuilding the skill, so before/after share the same tasks)")
-def eval_quality(ws: Path, skill: str | None, provider: str, model: str | None, judge_model: str | None,
-                 repeats: int, skill_only: bool, workers: int, eval_file: Path | None) -> None:
-    from .. import cli, evalquality
+@click.pass_context
+def eval_quality(ctx: click.Context, ws: Path, skill: str | None, provider: str | None, model: str | None,
+                 judge_model: str | None, repeats: int, skill_only: bool, workers: int,
+                 eval_file: Path | None) -> None:
+    from .. import evalquality
     w = workspace.load(ws)
     load_dotenv(Path.cwd(), ws, ws.parent)
-    gen = cli.get_provider(provider, model)
-    judge = cli.get_provider(provider, judge_model) if judge_model else gen
+    gen = build_provider(ctx, provider, model)
+    judge = build_provider(ctx, provider, judge_model) if judge_model else gen
     run_dir = evalquality.run(w, gen, judge, skill, str(model or getattr(gen, "model", "") or ""),
                               str(judge_model or getattr(judge, "model", "") or ""), repeats, not skill_only, workers, eval_file)
     click.echo(f"quality run saved: {run_dir}")

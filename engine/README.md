@@ -6,7 +6,7 @@ Skillsmith is an auditable compiler that converts procedural research papers (te
 A summary is a failure. When a source contains an actionable procedure, descriptive claims ("we found X improves Y under Z") become procedures ("when S, do steps 1-4, use these defaults, watch for these failure modes"). When a source does not support an execution procedure, stage 02 branches to a `decision_guide`, an `evidence_reference`, or abstains cleanly.
 
 ## What is in this folder
-The Python package (`src/skillsmith` with modular subcommands in `src/skillsmith/commands/`), its 128-test suite (`tests/`), the design spec and QA reports (`build/`), and notes on lessons learned (`library/`). The project overview, install and usage are in the [repository README](../README.md).
+The Python package (`src/skillsmith` with modular subcommands in `src/skillsmith/commands/`), its test suite (`tests/`), the design spec and QA reports (`build/`), and notes on lessons learned (`library/`). The project overview, install and usage are in the [repository README](../README.md).
 
 `src/skillsmith/templates/` is the bundled workspace (rules, prompts and stage contracts) that `skillsmith init` copies for each run. A bare run name such as `skillsmith run my-run` resolves inside the nearest `runs/` folder (or `$SKILLSMITH_RUNS_DIR`); a full path always works.
 
@@ -62,7 +62,7 @@ Providers: `--provider anthropic` (needs `ANTHROPIC_API_KEY`), `openai` (any Ope
 `mcp-serve` exposes `list_skills`, `get_playbook`, `get_system_prompt`, one tool per skill and one `skillsmith://<name>` resource per skill. A skill tool *selects* playbook units whose trigger/title words overlap the `situation` and returns them with the boundaries to check; with no overlap it answers `NO MATCH` and says not to apply the skill. It does not execute the playbook or call an LLM. Requires the `mcp` 1.x SDK (pinned `<2`).
 
 ## Honest status & limits (v0.2)
-- **Unit & regression suite:** 128 tests (`pytest`), exercising the pipeline checks, config resolution, CLI subcommands, and MCP server with a scripted fake LLM and synthetic PDFs.
+- **Unit & regression suite:** the test suite (`pytest`), exercising the pipeline checks, config resolution, CLI subcommands, and MCP server with a scripted fake LLM and synthetic PDFs.
 - **Live paper validation:** Tested end-to-end on the 21-page *Interpretable Context Methodology* paper (arXiv:2603.16021) using live Claude models, passing `verify` and `audit` (0 unaccounted sections, 32 extracted units consolidated into 21 with 0 silent drops), and evaluated with `eval-run` and `eval-quality` (blind A/B judging). See the [root README](../README.md#how-well-does-it-work) for full evaluation details.
 - Re-running a stage invalidates every later stage (they show as pending).
 - Printed-page offset detection needs bare page-number blocks; 'Page N' footers leave printed pages unknown (`page_basis=pdf`, citations use PDF pages only).
