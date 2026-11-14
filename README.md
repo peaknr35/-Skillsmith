@@ -2,9 +2,9 @@
 
 > From "we found" to "do this."
 
-Skillsmith turns a research paper, article or book (a text PDF) into agent skills: a `SKILL.md` playbook, a Claude tool schema, a system prompt and page-cited evidence. A summary does not change how a model behaves. A skill does: it says when it applies, gives numbered steps and defaults, and says where the advice stops holding.
+Skillsmith is an auditable compiler that converts procedural research papers into reviewable, source-linked agent playbooks (`SKILL.md`, `playbook.md`, `tool.json`, `system_prompt.md`, and `references/evidence.md`), and tests whether those playbooks actually help on real tasks.
 
-It is a six-stage pipeline with two human review gates, and deterministic checks wherever a check can be mechanical (page numbers, quotes, every number in the output). It also ships the tools to test the skills it makes.
+Not every paper should become an execution skill. Skillsmith runs a six-stage pipeline with an applicability gate (choosing between an execution skill, a decision guide, an evidence reference, or explicit abstention), two human review gates, deterministic provenance checks (dual-page citations, verbatim quote checks, zero silent unit drops, and mechanical number verification), and blind A/B evaluation against the base model.
 
 ## What you get
 

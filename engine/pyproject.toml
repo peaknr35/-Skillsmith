@@ -5,10 +5,9 @@ build-backend = "hatchling.build"
 [project]
 name = "skillsmith"
 version = "0.2.0"
-description = "From 'we found' to 'do this': compile papers, articles and books into agent skills."
+description = "From 'we found' to 'do this': compile procedural research papers into auditable, source-linked agent playbooks."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
 keywords = ["llm", "agents", "claude", "mcp", "skills", "research", "paper-to-skill"]
 classifiers = [
   "Programming Language :: Python :: 3",
