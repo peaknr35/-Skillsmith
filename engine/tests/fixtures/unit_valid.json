@@ -1,0 +1,44 @@
+{
+ "id": "",
+ "title": "Build a summary tree for long documents",
+ "triggers": [
+  "answers miss information spread across sections"
+ ],
+ "procedure": [
+  "Chunk the document at 100 tokens.",
+  "Cluster and summarize each cluster.",
+  "Retrieve from every level."
+ ],
+ "defaults": [
+  {
+   "parameter": "clustering threshold",
+   "value": "0.5",
+   "tested_range": "0.3 to 0.7",
+   "cite": {
+    "pdf_page": 4,
+    "printed_page": 2
+   }
+  }
+ ],
+ "boundaries": [
+  "Not for single-fact lookup."
+ ],
+ "failure_modes": [
+  "Threshold above 0.7 gives coarse clusters."
+ ],
+ "evidence": [
+  {
+   "claim": "Improved accuracy by 20 points on multi-hop questions",
+   "grade": "B",
+   "conditions": "narrative QA, 7B model",
+   "cite": {
+    "pdf_page": 6,
+    "printed_page": 4
+   }
+  }
+ ],
+ "example": "A user indexes a contract archive.",
+ "time_sensitive": false,
+ "extrapolations": [],
+ "script_candidate": false
+}

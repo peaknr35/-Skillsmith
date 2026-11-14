@@ -1,0 +1,11 @@
+# Gate criteria
+- [ ] Triad test passed for `execution_skill`; otherwise `decision_guide`, `evidence_reference`, or `actionable: false`
+- [ ] Description names situations + phrasings + explicit exclusions; starts with `Use when `; third person
+- [ ] Fit check at top of SKILL.md; body <=500 lines; duplicate steps across units collapsed (exposure check)
+- [ ] Every number appears in a units file with page cite (`skillsmith verify`)
+- [ ] Coverage ledger, unit accounting, and step-to-page support checked (`skillsmith audit`)
+- [ ] Every unit has boundaries, failure modes, evidence grade (A controlled / B observational / C heuristic)
+- [ ] Inferences beyond the source labeled; dated tactics flagged; `references/provenance.json` written
+- [ ] Passed ethics-filter
+- [ ] >=10 should-fire and >=10 near-miss prompts; 3-5 task tests (>=2 neutral, process checks, strict completion)
+- [ ] Blind quality check (`skillsmith eval-quality`): skill helps on fitting tasks and does not impose the method on neutral tasks where the setup was not described

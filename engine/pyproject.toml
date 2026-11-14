@@ -1,0 +1,27 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "skillsmith"
+version = "0.2.0"
+description = "From 'we found' to 'do this': compile papers, articles and books into agent skills."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = ["pymupdf>=1.24", "pydantic>=2.5", "mcp>=1.2,<2", "click>=8.1", "rich>=13"]
+
+[project.optional-dependencies]
+anthropic = ["anthropic>=0.40"]
+openai = ["openai>=1.40"]
+langchain = ["langchain>=0.3", "langchain-core>=0.3"]
+dev = ["pytest>=8"]
+
+[project.scripts]
+skillsmith = "skillsmith.cli:entry"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/skillsmith"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

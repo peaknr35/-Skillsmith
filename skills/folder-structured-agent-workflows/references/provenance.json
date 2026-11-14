@@ -1,0 +1,400 @@
+{
+  "skill": "folder-structured-agent-workflows",
+  "artifact": "execution_skill",
+  "role": "standard",
+  "compile_mode": "lean",
+  "skillsmith_version": "0.2.0",
+  "source": {
+    "title": "Interpretable Context Methodology: Folder Structure as Agentic Architecture",
+    "author": "Jake Van Clief; David McDermott",
+    "file": "icm-2603.16021v2.pdf",
+    "sha256": "7f57262dd6b74782f906f98fb66c09be7c0fa73931d164047dca8ae6d51bf95f"
+  },
+  "units": [
+    {
+      "id": "u01",
+      "title": "Check whether a workflow fits the folder-per-stage (ICM) design before adopting it",
+      "source_units": [
+        "ch05-u01",
+        "ch07-u02",
+        "ch02-u01",
+        "ch01-u01",
+        "ch03-u09"
+      ],
+      "pdf_pages": [
+        1,
+        2,
+        3,
+        8,
+        14,
+        18
+      ],
+      "printed_pages": [
+        1,
+        2,
+        3,
+        8,
+        14,
+        18
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u02",
+      "title": "Organize an agent workspace as numbered stage folders with a five-layer context hierarchy",
+      "source_units": [
+        "ch03-u01",
+        "ch01-u02"
+      ],
+      "pdf_pages": [
+        1,
+        5,
+        6
+      ],
+      "printed_pages": [
+        1,
+        5,
+        6
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u03",
+      "title": "Write each stage as a contract with Inputs, Process and Outputs",
+      "source_units": [
+        "ch03-u03"
+      ],
+      "pdf_pages": [
+        7,
+        9
+      ],
+      "printed_pages": [
+        7,
+        9
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u04",
+      "title": "Separate reference material (Layer 3) from working artifacts (Layer 4)",
+      "source_units": [
+        "ch03-u02",
+        "ch05-u03"
+      ],
+      "pdf_pages": [
+        6,
+        15
+      ],
+      "printed_pages": [
+        6,
+        15
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u05",
+      "title": "Give each stage exactly one job and a readable input and output",
+      "source_units": [
+        "ch03-u05",
+        "ch02-u04"
+      ],
+      "pdf_pages": [
+        2,
+        3,
+        5
+      ],
+      "printed_pages": [
+        2,
+        3,
+        5
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u06",
+      "title": "Use plain text files as the interface between stages",
+      "source_units": [
+        "ch03-u06"
+      ],
+      "pdf_pages": [
+        5
+      ],
+      "printed_pages": [
+        5
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u07",
+      "title": "Insert a human review gate at every stage boundary",
+      "source_units": [
+        "ch04-u01",
+        "ch03-u04"
+      ],
+      "pdf_pages": [
+        8,
+        11
+      ],
+      "printed_pages": [
+        8,
+        11
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u08",
+      "title": "Scope each stage's context tightly and check it against the token budget",
+      "source_units": [
+        "ch03-u08",
+        "ch02-u02",
+        "ch05-u02"
+      ],
+      "pdf_pages": [
+        4,
+        7,
+        8,
+        15
+      ],
+      "printed_pages": [
+        4,
+        7,
+        8,
+        15
+      ],
+      "evidence_grades": [
+        "B",
+        "C"
+      ]
+    },
+    {
+      "id": "u09",
+      "title": "Audit each stage's context using write, select, compress and isolate",
+      "source_units": [
+        "ch02-u05"
+      ],
+      "pdf_pages": [
+        3
+      ],
+      "printed_pages": [
+        3
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u10",
+      "title": "Scope tool definitions per stage and layer MCP inside stages",
+      "source_units": [
+        "ch02-u03"
+      ],
+      "pdf_pages": [
+        4
+      ],
+      "printed_pages": [
+        4
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u11",
+      "title": "Configure the factory once, then run the pipeline for each product",
+      "source_units": [
+        "ch03-u07"
+      ],
+      "pdf_pages": [
+        5
+      ],
+      "printed_pages": [
+        5
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u12",
+      "title": "Check that a pipeline gives humans visible state and review points",
+      "source_units": [
+        "ch02-u06"
+      ],
+      "pdf_pages": [
+        4
+      ],
+      "printed_pages": [
+        4
+      ],
+      "evidence_grades": [
+        "B"
+      ]
+    },
+    {
+      "id": "u13",
+      "title": "Allocate review effort in a staged pipeline using the U-shaped editing pattern",
+      "source_units": [
+        "ch04-u02"
+      ],
+      "pdf_pages": [
+        12
+      ],
+      "printed_pages": [
+        12
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u14",
+      "title": "Surface the structural plan as an editable file before drafting (course deck workflow)",
+      "source_units": [
+        "ch04-u03"
+      ],
+      "pdf_pages": [
+        11
+      ],
+      "printed_pages": [
+        11
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u15",
+      "title": "Decide whether to build a new workspace with the builder or duplicate an existing one",
+      "source_units": [
+        "ch04-u04"
+      ],
+      "pdf_pages": [
+        11,
+        13
+      ],
+      "printed_pages": [
+        11,
+        13
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u16",
+      "title": "Tune stage behavior by editing CONTEXT.md in plain text",
+      "source_units": [
+        "ch04-u05"
+      ],
+      "pdf_pages": [
+        13
+      ],
+      "printed_pages": [
+        13
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u17",
+      "title": "Audit and correct a pipeline run by reading the stage files",
+      "source_units": [
+        "ch05-u04"
+      ],
+      "pdf_pages": [
+        14
+      ],
+      "printed_pages": [
+        14
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u18",
+      "title": "Re-run only the stale stages instead of the whole pipeline",
+      "source_units": [
+        "ch06-u01"
+      ],
+      "pdf_pages": [
+        16
+      ],
+      "printed_pages": [
+        16
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u19",
+      "title": "Add a cross-stage audit that re-checks stage n output against stage n-2",
+      "source_units": [
+        "ch06-u02"
+      ],
+      "pdf_pages": [
+        17
+      ],
+      "printed_pages": [
+        17
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u20",
+      "title": "Decide whether to edit an output or fix its source, and treat recurring edits as debugging signals",
+      "source_units": [
+        "ch07-u01",
+        "ch06-u03"
+      ],
+      "pdf_pages": [
+        17,
+        18
+      ],
+      "printed_pages": [
+        17,
+        18
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    },
+    {
+      "id": "u21",
+      "title": "Check whether ICM's evidence covers your model and use case before relying on its claims",
+      "source_units": [
+        "ch04-u06"
+      ],
+      "pdf_pages": [
+        10,
+        13
+      ],
+      "printed_pages": [
+        10,
+        13
+      ],
+      "evidence_grades": [
+        "C"
+      ]
+    }
+  ],
+  "excluded": []
+}

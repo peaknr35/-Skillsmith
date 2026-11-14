@@ -1,0 +1,43 @@
+{
+  "name": "folder-structured-agent-workflows",
+  "description": "Use when designing, setting up, or debugging a sequential, multi-stage AI agent workflow with human review between stages, for example when a user asks to 'organize an agent pipeline as folders', 'replace a multi-agent framework with files', 'write stage contracts or CONTEXT.md files', or 'control what context each step sees'. Applies a folder-as-architecture method: numbered stage folders, layered context loading, plain-file handoffs and review gates. Not for workflows needing real-time multi-agent collaboration, high concurrency, or fully autonomous operation without human review.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "situation": {
+        "type": "string",
+        "description": "The user's situation in one or two sentences."
+      },
+      "unit_id": {
+        "type": "string",
+        "enum": [
+          "u01",
+          "u02",
+          "u03",
+          "u04",
+          "u05",
+          "u06",
+          "u07",
+          "u08",
+          "u09",
+          "u10",
+          "u11",
+          "u12",
+          "u13",
+          "u14",
+          "u15",
+          "u16",
+          "u17",
+          "u18",
+          "u19",
+          "u20",
+          "u21"
+        ],
+        "description": "Optional: return only this action unit."
+      }
+    },
+    "required": [
+      "situation"
+    ]
+  }
+}
