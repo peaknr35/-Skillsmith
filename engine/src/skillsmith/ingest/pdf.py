@@ -55,7 +55,11 @@ def _page_number_candidate(blocks: list[str]) -> int | None:
 
 
 def ingest_pdf(path: Path, min_chars_per_page: int = 25) -> Ingested:
-    doc = pymupdf.open(path)
+    with pymupdf.open(path) as doc:  # closed on every exit path, including IngestAbstain
+        return _ingest(doc, path, min_chars_per_page)
+
+
+def _ingest(doc: "pymupdf.Document", path: Path, min_chars_per_page: int) -> Ingested:
     n = len(doc)
     if n == 0:
         raise IngestAbstain("PDF has no pages.")
@@ -72,9 +76,9 @@ def ingest_pdf(path: Path, min_chars_per_page: int = 25) -> Ingested:
     for i in range(n):
         c = _page_number_candidate(raw[i])
         if c is None:  # running headers/footers get merged into bigger blocks: look at raw lines too
-            lines = [l.strip() for l in doc[i].get_text("text").splitlines() if l.strip()]
-            for l in lines[:3] + lines[-3:]:
-                m = _INT.match(l)
+            lines = [ln.strip() for ln in doc[i].get_text("text").splitlines() if ln.strip()]
+            for ln in lines[:3] + lines[-3:]:
+                m = _INT.match(ln)
                 if m:
                     c = int(m.group(1))
                     break
