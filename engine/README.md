@@ -5,10 +5,10 @@ Skillsmith turns a research paper, article or book (PDF) into agent skills: a `S
 
 A summary is a failure. Descriptive claims ("we found X improves Y under Z") become procedures ("when S, do steps 1-4, use these defaults, watch for these failure modes").
 
-## Where things are (read this first)
-This folder is the engine only: `src\skillsmith\`, `tests\`, `pyproject.toml`, `.github\`, `build\` (the SPEC-V2 contract and QA reports) and `library\` (lessons learned). Runs live in `..\runs\<name>`, finished skills in `..\skills\`, the API key in `..\.env`. See `E:\Skillsmith\README.md` for the full map.
+## What is in this folder
+The Python package (`src/skillsmith`), its tests (`tests/`), the design spec and QA reports (`build/`) and notes on lessons learned (`library/`). The project overview, install and usage are in the [repository README](../README.md).
 
-`src\skillsmith\templates\` is the bundled ICM workspace that `skillsmith init` copies for each run. A bare run name (for example `skillsmith run icm-paper`) resolves inside the nearest `runs` folder, or `$SKILLSMITH_RUNS_DIR`.
+`src/skillsmith/templates/` is the bundled workspace (rules, prompts and stage contracts) that `skillsmith init` copies for each run. A bare run name such as `skillsmith run my-run` resolves inside the nearest `runs/` folder (or `$SKILLSMITH_RUNS_DIR`); a full path always works.
 
 ## Install
 ```bash

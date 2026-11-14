@@ -2,73 +2,124 @@
 
 > From "we found" to "do this."
 
-Skillsmith turns a research paper or article PDF into an agent skill: a `SKILL.md` playbook,
-a Claude tool schema, a system prompt, and an execution checklist. Every number in the output
-must trace to a cited page.
+Skillsmith turns a research paper, article or book (a text PDF) into agent skills: a `SKILL.md` playbook, a Claude tool schema, a system prompt and page-cited evidence. A summary does not change how a model behaves. A skill does: it says when it applies, gives numbered steps and defaults, and says where the advice stops holding.
 
-A summary changes nothing about how a model behaves. A skill does: it names the situations
-that trigger it, lists the steps, gives defaults, and says where the result stops applying.
+It is a six-stage pipeline with two human review gates, and deterministic checks wherever a check can be mechanical (page numbers, quotes, every number in the output). It also ships the tools to test the skills it makes.
+
+## What you get
+
+For each skill:
+
+```
+<skill>/
+  SKILL.md                  the lean entry point (500 lines at most): fit check, unit index, steps, defaults
+  playbook.md               boundaries, pitfalls and worked examples for every unit
+  references/evidence.md    evidence grades, page cites, and the source units each unit was built from
+  tool.json                 a Claude tool schema (for MCP or other runtimes)
+  system_prompt.md          a system-prompt fragment for LLMs without native skill support
+```
+
+A real example, built from the paper *Interpretable Context Methodology* (arXiv 2603.16021), is in [`skills/folder-structured-agent-workflows`](skills/folder-structured-agent-workflows).
 
 ## How it works
 
-Six stages, each loading only the context it needs, with a human review gate after two of them:
+```
+01 ingest -> 02 map [gate] -> 03 extract -> 04 consolidate [gate] -> 05 write -> 06 eval
+```
 
-`01 ingest` → `02 map` ⏸ → `03 extract` → `04 consolidate` ⏸ → `05 write` → `06 eval`
+| Stage | What happens | Uses an LLM |
+|---|---|---|
+| 01 ingest | PyMuPDF text, printed-vs-PDF page offset, outline-based sections | no |
+| 02 map | Is the source actionable? Triage every section, propose skills. Stops and abstains if nothing would change what a practitioner does | yes |
+| 03 extract | One call per section: action units (trigger, steps, defaults, boundaries, failure modes, graded evidence). Rejects invented numbers, quotes not on the cited page, cites outside the section | yes |
+| 04 consolidate | The model returns a small merge plan; code builds the merged units from the originals, so cites and numbers are inherited. Every extracted unit must be carried or excluded with a reason | yes |
+| 05 write | Compiles the files above and checks that every number appears in a page-cited unit | no |
+| 06 eval | Writes trigger tests and neutral-task tests | yes |
 
-- Ingest extracts text and page numbers, and detects the printed-vs-PDF page offset.
-- Map decides whether the source is actionable at all. If a practitioner would do nothing differently, it stops.
-- Extract pulls out action units (trigger, steps, defaults, boundaries, failure modes, graded evidence) one chunk at a time.
-- Verify checks that every number in `SKILL.md` appears in a cited unit.
+Each stage loads only its own contract and inputs, never the whole book. Bad output is fixed by editing the rules and prompts in the workspace's `_config/`, not by hand-editing the generated skill.
 
 ## Install
 
-    git clone https://github.com/peaknr35/skillsmith
-    cd skillsmith/engine
-    pip install -e ".[all]"
-    export ANTHROPIC_API_KEY=...
+Python 3.10 or newer. Not on PyPI; install from source.
 
-## Quick start
+```bash
+git clone https://github.com/peaknr35/-Skillsmith.git
+cd -- -Skillsmith/engine
+pip install -e ".[anthropic]"     # or ".[openai]" (also Ollama via OPENAI_BASE_URL) or ".[langchain]"
+```
 
-    skillsmith init my-run --source paper.pdf
-    skillsmith run my-run --provider anthropic     # stops at the first gate
-    skillsmith approve my-run 02_map
-    skillsmith run my-run --provider anthropic
-    skillsmith approve my-run 04_consolidate
-    skillsmith run my-run --provider anthropic
-    skillsmith verify my-run
-    skillsmith export my-run --dest ~/.claude/skills
+Put your key in a `.env` file in the repo root or the engine folder (never committed), or set it in the environment:
 
-Try it offline first with `--provider fake`.
+```
+ANTHROPIC_API_KEY=...
+```
 
-## Example output
+## Use it
 
-Built from the ICM paper (see `skills/folder-structured-agent-workflows/`):
+```bash
+skillsmith init my-run --source paper.pdf
+skillsmith run my-run --provider anthropic    # one stage per call; 01 ingest
+skillsmith run my-run --provider anthropic    # 02 map, stops at the review gate
+skillsmith approve my-run 02_map              # after you read stages/02_map/output/source_map.json
+skillsmith run my-run --provider anthropic    # 03 extract
+skillsmith run my-run --provider anthropic    # 04 consolidate, stops at the gate
+skillsmith approve my-run 04_consolidate      # after you read conflicts.md and accounting.md
+skillsmith run my-run --provider anthropic    # 05 write
+skillsmith run my-run --provider anthropic    # 06 eval
+skillsmith export my-run --dest ~/.claude/skills
+```
 
-    folder-structured-agent-workflows/
-      SKILL.md
-      tool.json
-      system_prompt.md
-      playbook.md
-      references/evidence.md
+`skillsmith status my-run` shows where a run is. `--stage 03_extract` re-runs one stage (this also marks every later stage pending).
 
-## Repo layout
+### Check what it made
 
-| Path | What it is |
+| Command | What it does |
 |---|---|
-| `engine/` | The Python package, tests, and spec |
-| `skills/` | Finished skills generated by Skillsmith |
-| `.github/` | CI |
+| `skillsmith verify my-run` | Mechanical check: every number in the output appears in a page-cited unit |
+| `skillsmith audit my-run` | Section coverage ledger, unit accounting from stage 03 to 04, and a step-to-page citation screen |
+| `skillsmith eval-run my-run` | Trigger test (skill among distractors) and a with/without-skill task comparison |
+| `skillsmith eval-quality my-run` | Blind answer-quality judge: repeated answers with and without the skill, scored in random order on generic criteria that never mention the skill |
 
-## Providers
+### Use the skills
 
-Anthropic, OpenAI-compatible endpoints (including Ollama via `--base-url`), and LangChain.
-Use with Claude Code by exporting to `~/.claude/skills`, or serve over MCP with `skillsmith mcp-serve`.
+- **Claude Code:** `skillsmith export` copies the skill folders into `~/.claude/skills`.
+- **MCP:** `skillsmith mcp-serve <skills-dir>` serves each skill as a tool; it selects playbook units by keyword overlap and says "no match" rather than guessing.
+- **Other LLMs:** `skillsmith router <skills-dir>` prints a name-and-description prompt to use as a router.
+
+## How well does it work?
+
+Honest status, v0.2:
+
+- **Tests:** over 110 tests, all with a scripted fake LLM and synthetic PDFs. They test the pipeline's checks, not the quality of any generated skill. No fresh-eyes review has covered the newest changes.
+- **Real run:** one paper (the 21-page ICM paper) went through every stage on a live model, with two human gates. The audit shows no unaccounted sections and no dropped units (32 extracted, 21 consolidated), and all 21 units have lexical citation support on their cited pages. That check is a screen, not proof a claim is faithful.
+- **Does the skill improve answers?** Not shown. In a blind judge test (12 comparisons per run, Sonnet 5.5 answering, Opus 5.5 judging), answers without the skill were preferred in 10, 9 and 9 of 12 across three successive rebuilds of the skill. Rebuilds fixed real problems the judge named (unexplained sources, internal ids and page cites leaking into answers), and the gap narrowed, but the skill still lost more often than it won, and it won most clearly when the user asked about the paper itself. The source paper itself reports no controlled comparison against ordinary good practice. Treat the generated skill as a way to apply that method, not as proof it beats generic advice.
 
 ## Limits
 
-No OCR for scanned PDFs. Evidence grades are model-judged, so review them at the gates.
-Verification checks numbers, not whether a claim is faithful to the paper.
+- No OCR: scanned PDFs make stage 01 stop with a clear message.
+- Tables lose their column alignment in extracted text.
+- Printed-page detection needs bare page-number lines; "Page N" footers leave printed pages unknown and citations fall back to PDF pages.
+- `verify` is a mechanical check. It skips worked examples, cannot read number words, and cannot judge whether a claim is faithful. Review evidence grades and conflicts at the gates.
+- Only one source has run live. Books, empirical papers and other source types are untested.
 
-## License
+## Repository layout
 
-MIT
+| Path | What it is |
+|---|---|
+| `engine/` | The Python package (`src/skillsmith`), tests, the spec and QA reports (`build/`) and lessons (`library/`) |
+| `skills/` | Skills: one built by Skillsmith from a paper, and `skillsmith-pipeline`, which teaches an agent to run Skillsmith |
+| `.github/` | CI (runs the tests in `engine/`) |
+
+Runs (`runs/`) and source PDFs are not committed.
+
+## Development
+
+```bash
+cd engine
+pip install -e ".[dev]"
+pytest
+```
+
+## Licence
+
+No licence has been chosen yet, so by default all rights are reserved. The PDF library used, PyMuPDF, is AGPL or commercially licensed, which matters for any reuse; choose a licence deliberately before relying on this elsewhere.
