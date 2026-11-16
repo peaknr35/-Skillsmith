@@ -22,3 +22,10 @@ __pycache__/
 build/lib/
 dist/
 .coverage
+
+# system-prompts: only our own reference work is tracked; third-party collections stay local
+# (licences and origins unchecked)
+system-prompts/*
+!system-prompts/README.md
+!system-prompts/dsh-superagent/
+!system-prompts/general/
